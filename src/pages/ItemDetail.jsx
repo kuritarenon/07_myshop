@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase.js";
 
 export default function ItemDetail() {
   // URLパラメータを取得
@@ -8,14 +10,12 @@ export default function ItemDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/items.json')
-      .then((res) => res.json())
-      .then((data) => {
-        // URLパラメータに一致するアイテムを探す
-        const found = data.items.find((i) => i.id === id);
-        setItem(found ?? null);
-        setLoading(false);
-      });
+    getDocs(collection(db, "items")).then((snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const found = data.find((i) => i.id === id);
+      setItem(found ?? null);
+      setLoading(false);
+    });
   }, [id]);
 
   if (loading) {
