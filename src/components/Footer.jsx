@@ -1,3 +1,4 @@
+// src/components/Footer.jsx
 export default function Footer() {
   return (
     <footer className="site-footer">
@@ -18,7 +19,7 @@ export default function Footer() {
           </a>
         </li>
       </ul>
-      <p className="site-footer__copy">copyright Myshop 2026</p>
+      <p className="site-footer__copy">copyright Care Bears Shop 2026</p>
     </footer>
   );
 }

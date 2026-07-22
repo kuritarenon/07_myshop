@@ -3,17 +3,30 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase.js";
+import { DEFAULT_CARE_BEAR_ITEMS } from "../data/careBearsData.js";
 
 export default function Cart({ cart }) {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    getDocs(collection(db, "items")).then((snapshot) => {
-      setItems(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
+    let isMounted = true;
+    getDocs(collection(db, "items"))
+      .then((snapshot) => {
+        if (!isMounted) return;
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setItems(data.length > 0 ? data : DEFAULT_CARE_BEAR_ITEMS);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setItems(DEFAULT_CARE_BEAR_ITEMS);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // カートのエントリ（id・数量）に、items.jsonの商品情報を合体させる
   const rows = cart.entries
     .map((entry) => {
       const item = items.find((i) => i.id === entry.id);
@@ -21,7 +34,6 @@ export default function Cart({ cart }) {
     })
     .filter((row) => row !== null);
 
-  // 合計金額（単価 × 数量 の合計）
   const totalPrice = rows.reduce((sum, row) => sum + row.price * row.quantity, 0);
 
   if (cart.entries.length === 0) {
@@ -44,7 +56,7 @@ export default function Cart({ cart }) {
             <img src={row.image} alt={row.name} />
             <div className="cart-row__info">
               <p>{row.name}</p>
-              <p>¥{row.price.toLocaleString()}</p>
+              <p>¥{row.price ? row.price.toLocaleString() : 0}</p>
             </div>
             <div className="cart-row__quantity">
               <button type="button" onClick={() => cart.update(row.id, row.quantity - 1)}>−</button>
@@ -52,7 +64,7 @@ export default function Cart({ cart }) {
               <button type="button" onClick={() => cart.update(row.id, row.quantity + 1)}>＋</button>
             </div>
             <p className="cart-row__subtotal">¥{(row.price * row.quantity).toLocaleString()}</p>
-            <button type="button" onClick={() => cart.remove(row.id)}>削除</button>
+            <button type="button" className="cart-row__remove" onClick={() => cart.remove(row.id)}>削除</button>
           </li>
         ))}
       </ul>

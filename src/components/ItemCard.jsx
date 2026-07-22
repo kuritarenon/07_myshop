@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 export default function ItemCard({ item, favorites, cart }) {
   const handleFavorite = (e) => {
     e.preventDefault(); // 親の<Link>による画面遷移を止める
+    if (!favorites) return;
     if (favorites.has(item.id)) {
       favorites.remove(item.id);
     } else {
@@ -13,7 +14,9 @@ export default function ItemCard({ item, favorites, cart }) {
 
   const handleAddToCart = (e) => {
     e.preventDefault();
-    cart.add(item.id);
+    if (cart) {
+      cart.add(item.id);
+    }
   };
 
   return (
@@ -25,15 +28,15 @@ export default function ItemCard({ item, favorites, cart }) {
         )}
       </div>
       <h3 className="item-card__name">{item.name}</h3>
-      <p className="item-card__price">¥{item.price.toLocaleString()}</p>
+      <p className="item-card__price">¥{item.price ? item.price.toLocaleString() : 0}</p>
       <button
         type="button"
         className={
-          favorites.has(item.id) ? "item-card__fav is-active" : "item-card__fav"
+          favorites && favorites.has(item.id) ? "item-card__fav is-active" : "item-card__fav"
         }
         onClick={handleFavorite}
       >
-        ♡
+        {favorites && favorites.has(item.id) ? "♥" : "♡"}
       </button>
       <button
         type="button"

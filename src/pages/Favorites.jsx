@@ -3,18 +3,31 @@ import { useEffect, useState } from "react";
 import ItemCard from "../components/ItemCard.jsx";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase.js";
+import { DEFAULT_CARE_BEAR_ITEMS } from "../data/careBearsData.js";
 
 export default function Favorites({ favorites, cart }) {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    getDocs(collection(db, "items")).then((snapshot) => {
-      setItems(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
+    let isMounted = true;
+    getDocs(collection(db, "items"))
+      .then((snapshot) => {
+        if (!isMounted) return;
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setItems(data.length > 0 ? data : DEFAULT_CARE_BEAR_ITEMS);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setItems(DEFAULT_CARE_BEAR_ITEMS);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // 全アイテムから、お気に入りIDに含まれるものだけを残す
-  const favItems = items.filter((item) => favorites.ids.includes(item.id));
+  const favItems = items.filter((item) => favorites?.ids?.includes(item.id));
 
   if (favItems.length === 0) {
     return (
@@ -31,7 +44,7 @@ export default function Favorites({ favorites, cart }) {
       <ul className="home__list">
         {favItems.map((item) => (
           <li key={item.id}>
-            <ItemCard item={item} favorites={favorites} />
+            <ItemCard item={item} favorites={favorites} cart={cart} />
           </li>
         ))}
       </ul>
